@@ -4,9 +4,8 @@
 
 该脚本负责：
 1. 获取程序所在目录
-2. 配置Flask应用
-3. 启动Web服务器
-4. 自动打开浏览器
+2. 启动FastAPI应用服务器
+3. 自动打开浏览器
 """
 
 import os
@@ -34,7 +33,7 @@ def get_application_path():
 def open_browser_tab(url, delay=1.5):
     """
     延迟打开浏览器标签页
-    给予Flask服务器足够的启动时间
+    给予FastAPI服务器足够的启动时间
 
     Args:
         url (str): 要打开的URL地址
@@ -47,7 +46,7 @@ def open_browser_tab(url, delay=1.5):
 
 def main():
     """
-    主函数 - 启动Flask应用
+    主函数 - 启动FastAPI应用
     """
     # 获取应用根目录
     app_root = get_application_path()
@@ -59,46 +58,22 @@ def main():
     print("\n正在启动服务器...")
 
     try:
-        # 导入Flask应用
+        # 导入FastAPI应用
         from backend.app import app
+        import uvicorn
 
-        # 配置静态文件和模板路径
-        # 前端文件位于 app_root/frontend/
+        # 检查前端文件是否存在
         frontend_path = os.path.join(app_root, 'frontend')
-
         if not os.path.exists(frontend_path):
-            print(f"\n错误: 找不到前端文件目录: {frontend_path}")
+            print(f"\n警告: 找不到前端文件目录: {frontend_path}")
             print("请确保frontend文件夹存在于应用程序所在目录。")
-            input("\n按Enter键退出...")
-            sys.exit(1)
-
-        # 设置Flask配置
-        app.config['FRONTEND_PATH'] = frontend_path
-        app.config['HOST'] = '127.0.0.1'
-        app.config['PORT'] = 5000
-
-        # 定义路由来服务前端文件
-        @app.route('/')
-        def serve_index():
-            """服务主页"""
-            from flask import send_from_directory
-            return send_from_directory(frontend_path, 'index.html')
-
-        @app.route('/<path:filename>')
-        def serve_static(filename):
-            """服务静态文件"""
-            from flask import send_from_directory
-            # 检查文件是否在pages目录下
-            if filename.startswith('pages/'):
-                return send_from_directory(frontend_path, filename)
-            # 其他静态文件
-            return send_from_directory(frontend_path, filename)
 
         # 启动URL
-        server_url = f"http://127.0.0.1:5000/"
+        server_url = "http://127.0.0.1:5000/"
 
         print(f"\n✓ 服务器启动成功！")
         print(f"✓ 访问地址: {server_url}")
+        print(f"✓ API文档地址: {server_url}docs")
         print(f"\n将在浏览器中自动打开应用...")
         print(f"\n按 Ctrl+C 或关闭此窗口停止服务器。")
         print("=" * 60)
@@ -106,20 +81,19 @@ def main():
         # 延迟打开浏览器，给予服务器启动时间
         open_browser_tab(server_url, delay=1.5)
 
-        # 启动Flask开发服务器
-        # 使用threaded=True支持多线程并发请求
-        app.run(
+        # 启动uvicorn服务器
+        uvicorn.run(
+            app,
             host='127.0.0.1',
             port=5000,
-            debug=False,           # 打包后关闭debug模式
-            threaded=True,
-            use_reloader=False    # 打包后关闭自动重载
+            log_level="info",
+            use_colors=True
         )
 
     except ImportError as e:
         print(f"\n错误: 导入模块失败 - {e}")
         print("\n请确保已安装所有依赖：")
-        print("  pip install -r backend/requirements.txt")
+        print("  pip install -r requirements.txt")
         input("\n按Enter键退出...")
         sys.exit(1)
 

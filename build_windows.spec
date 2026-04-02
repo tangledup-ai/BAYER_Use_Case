@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
 Bayer Scheduling System - Windows Build Specification
-Cross-compiled on macOS
+使用PyInstaller打包为Windows可执行文件
 """
 
 import os
@@ -19,13 +19,29 @@ a = Analysis(
         (os.path.join(root_dir, 'backend'), 'backend'),
     ],
     hiddenimports=[
-        'flask',
-        'flask_cors',
-        'werkzeug',
-        'jinja2',
-        'markupsafe',
-        'itsdangerous',
-        'click',
+        'fastapi',
+        'uvicorn',
+        'uvicorn.logging',
+        'uvicorn.loops',
+        'uvicorn.loops.auto',
+        'uvicorn.protocols',
+        'uvicorn.protocols.http',
+        'uvicorn.protocols.http.auto',
+        'uvicorn.protocols.websockets',
+        'uvicorn.protocols.websockets.auto',
+        'uvicorn.lifespan',
+        'uvicorn.lifespan.on',
+        'pydantic',
+        'pydantic.fields',
+        'pydantic.validators',
+        'starlette',
+        'starlette.applications',
+        'starlette.routing',
+        'starlette.middleware',
+        'starlette.middleware.cors',
+        'starlette.responses',
+        'starlette.requests',
+        'anyio',
         'webbrowser',
         'threading',
     ],
@@ -49,7 +65,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,  # macOS上关闭UPX
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,

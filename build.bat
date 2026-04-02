@@ -34,7 +34,7 @@ echo.
 
 :: Install project dependencies
 echo [3/5] Installing project dependencies...
-pip install -r backend\requirements.txt
+pip install -r requirements.txt
 if errorlevel 1 (
     echo [ERROR] Project dependencies installation failed
     pause
@@ -66,7 +66,12 @@ if exist "dist\拜耳排班系统\拜耳排班系统.exe" (
     echo Executable location:
     echo %~dp0dist\拜耳排班系统\拜耳排班系统.exe
     echo.
-    set /p choice=Run test now? (Y/N): 
+    echo Next steps:
+    echo 1. Navigate to: dist\拜耳排班系统\
+    echo 2. Copy the entire folder to your Windows system
+    echo 3. Double-click 拜耳排班系统.exe to run
+    echo.
+    set /p choice=Run test now? (Y/N):
     if /i "%choice%"=="Y" (
         start "" "dist\拜耳排班系统\拜耳排班系统.exe"
     )
@@ -74,9 +79,12 @@ if exist "dist\拜耳排班系统\拜耳排班系统.exe" (
     echo [FAILED] Build failed. Please check error messages above.
     echo.
     echo Common issues:
-    echo 1. Ensure no Chinese characters in path
+    echo 1. Ensure no Chinese characters in project path
     echo 2. Make sure port 5000 is not in use
     echo 3. Check error logs above
+    echo 4. Verify all dependencies are installed
+    echo.
+    echo For detailed troubleshooting, see WINDOWS_BUILD_GUIDE.md
     pause
     exit /b 1
 )

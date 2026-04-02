@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
 拜耳制药排班系统 - PyInstaller打包配置
-用于将Python Flask应用打包成Windows可执行文件
+用于将Python FastAPI应用打包成Windows可执行文件
 """
 
 import os
@@ -36,14 +36,39 @@ a = Analysis(
 
     # 隐藏导入 - 确保这些模块被打包
     hiddenimports=[
-        # Flask核心模块
-        'flask',
-        'flask_cors',
-        'werkzeug',
-        'jinja2',
-        'markupsafe',
-        'itsdangerous',
-        'click',
+        # FastAPI核心模块
+        'fastapi',
+        'uvicorn',
+        'uvicorn.logging',
+        'uvicorn.loops',
+        'uvicorn.loops.auto',
+        'uvicorn.protocols',
+        'uvicorn.protocols.http',
+        'uvicorn.protocols.http.auto',
+        'uvicorn.protocols.websockets',
+        'uvicorn.protocols.websockets.auto',
+        'uvicorn.lifespan',
+        'uvicorn.lifespan.on',
+
+        # Pydantic模块
+        'pydantic',
+        'pydantic.fields',
+        'pydantic.validators',
+        'pydantic.main',
+        'pydantic.basemodel',
+
+        # Starlette模块（FastAPI依赖）
+        'starlette',
+        'starlette.applications',
+        'starlette.routing',
+        'starlette.middleware',
+        'starlette.middleware.cors',
+        'starlette.responses',
+        'starlette.requests',
+
+        # AnyIO模块（异步支持）
+        'anyio',
+        'anyio.to_process',
 
         # 标准库模块
         'webbrowser',
@@ -51,13 +76,6 @@ a = Analysis(
         'urllib',
         'json',
         'datetime',
-
-        # Flask相关
-        'flask.globals',
-        'flask.app',
-        'flask.wrappers',
-        'flask.templating',
-        'flask.views',
     ],
 
     # Hook路径
@@ -117,7 +135,7 @@ exe = EXE(
     strip=False,
 
     # 使用UPX压缩
-    upx=True,
+    upx=False,
 
     # 控制台模式
     # False = 窗口模式（不显示控制台窗口）
@@ -161,7 +179,7 @@ coll = COLLECT(
     strip=False,
 
     # 使用UPX压缩
-    upx=True,
+    upx=False,
 
     # UPX排除列表
     upx_exclude=[],

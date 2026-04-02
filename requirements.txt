@@ -1,9 +1,10 @@
 # 拜耳制药排班系统 - 运行时依赖
 # 用于开发、测试和打包
 
-# Web框架
-flask>=2.0.0
-flask-cors>=3.0.0
+# Web框架 - FastAPI
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
 
 # 打包工具
 pyinstaller>=5.0.0

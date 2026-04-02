@@ -1,15 +1,65 @@
 """
 拜耳制药排班系统 - 后端API服务
-使用Flask框架提供RESTful API接口
+使用FastAPI框架提供RESTful API接口
 """
 
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from datetime import datetime, timedelta
-import random
+from fastapi import FastAPI, HTTPException, Query, Body, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, FileResponse
+from pydantic import BaseModel, Field
+from typing import Optional, List
+from datetime import datetime
+import os
 
-app = Flask(__name__)
-CORS(app)
+
+app = FastAPI(
+    title="拜耳制药排班系统 API",
+    description="拜耳制药排班系统的RESTful API接口",
+    version="1.0.0"
+)
+
+# 配置CORS，允许前端访问
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Pydantic模型定义
+class LeaveCreate(BaseModel):
+    """请假记录创建模型"""
+    name: str = Field(..., description="员工姓名")
+    date: str = Field(..., description="请假日期")
+    scheduled: str = Field(..., description="是否已安排排班")
+
+
+class WorkHourCreate(BaseModel):
+    """工时记录创建模型"""
+    name: str = Field(..., description="员工姓名")
+    id: str = Field(..., description="员工ID")
+    hours: float = Field(..., description="工时数")
+    month: str = Field(..., description="月份")
+
+
+class ShiftCreate(BaseModel):
+    """班次记录创建模型"""
+    name: str = Field(..., description="员工姓名")
+    shift: str = Field(..., description="班次类型")
+    personalShifts: int = Field(..., description="个人班次数")
+    totalShifts: int = Field(..., description="总班次数")
+    historicalRatio: Optional[float] = Field(None, description="历史比例")
+
+
+class PositionCreate(BaseModel):
+    """岗位记录创建模型"""
+    positionId: str = Field(..., description="岗位ID")
+    personalShifts: int = Field(..., description="个人班次数")
+    positionShifts: int = Field(..., description="岗位总班次数")
+    month: Optional[str] = Field(None, description="月份")
+
 
 # 模拟数据存储
 # 实际项目中应使用数据库（如MySQL、PostgreSQL、MongoDB等）
@@ -54,46 +104,63 @@ positions_data = [
 ]
 
 
-@app.route('/')
-def index():
+def get_frontend_path():
     """
-    首页路由
+    获取前端文件路径
+    支持打包后的exe和开发模式
+
+    Returns:
+        str: 前端目录路径
     """
-    return jsonify({
-        "message": "拜耳制药排班系统 API 服务",
-        "version": "1.0.0",
-        "status": "running"
-    })
+    import sys
+    if getattr(sys, 'frozen', False):
+        # PyInstaller打包后的exe模式
+        base_path = os.path.dirname(sys.executable)
+    else:
+        # 开发环境模式
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    return os.path.join(base_path, 'frontend')
 
 
-@app.route('/api/dashboard/stats', methods=['GET'])
-def get_dashboard_stats():
+@app.get('/')
+async def index():
+    """
+    首页路由 - 提供前端页面
+    """
+    frontend_path = get_frontend_path()
+    index_path = os.path.join(frontend_path, 'index.html')
+    return FileResponse(index_path)
+
+
+@app.get('/api/dashboard/stats', response_model=dict)
+async def get_dashboard_stats():
     """
     获取仪表板统计数据
     """
-    return jsonify({
+    return {
         "totalEmployees": 50,
         "totalLeaves": len(leaves_data),
         "totalWorkHours": sum(item['hours'] for item in workhours_data),
         "totalShifts": sum(item['personalShifts'] for item in shifts_data)
-    })
+    }
 
 
-@app.route('/api/leaves', methods=['GET'])
-def get_leaves():
+@app.get('/api/leaves', response_model=List[dict])
+async def get_leaves(
+    name: str = Query(None, description="按姓名筛选"),
+    scheduled: str = Query(None, description="按排班状态筛选"),
+    month: str = Query(None, description="按月份筛选")
+):
     """
     获取请假数据列表
     支持按姓名、日期筛选
     """
-    search_name = request.args.get('name', '').lower()
-    scheduled = request.args.get('scheduled', '')
-    month = request.args.get('month', '')
-
     filtered_data = leaves_data.copy()
 
     # 按姓名筛选
-    if search_name:
-        filtered_data = [item for item in filtered_data if search_name in item['name'].lower()]
+    if name:
+        filtered_data = [item for item in filtered_data if name.lower() in item['name'].lower()]
 
     # 按排班状态筛选
     if scheduled:
@@ -103,207 +170,186 @@ def get_leaves():
     if month:
         filtered_data = [item for item in filtered_data if item['date'].startswith(month)]
 
-    return jsonify(filtered_data)
+    return filtered_data
 
 
-@app.route('/api/leaves', methods=['POST'])
-def create_leave():
+@app.post('/api/leaves', status_code=201, response_model=dict)
+async def create_leave(leave: LeaveCreate):
     """
     创建请假记录
     """
-    data = request.get_json()
-
-    # 数据验证
-    required_fields = ['name', 'date', 'scheduled']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"缺少必填字段: {field}"}), 400
-
     # 添加新记录
     new_leave = {
-        "name": data['name'],
-        "date": data['date'],
-        "scheduled": data['scheduled']
+        "name": leave.name,
+        "date": leave.date,
+        "scheduled": leave.scheduled
     }
     leaves_data.append(new_leave)
 
-    return jsonify({"message": "请假记录创建成功", "data": new_leave}), 201
+    return {"message": "请假记录创建成功", "data": new_leave}
 
 
-@app.route('/api/workhours', methods=['GET'])
-def get_workhours():
+@app.get('/api/workhours', response_model=List[dict])
+async def get_workhours(
+    search: str = Query(None, description="按姓名或ID搜索"),
+    month: str = Query(None, description="按月份筛选")
+):
     """
     获取工时数据列表
     支持按姓名、员工ID、月份筛选
     """
-    search = request.args.get('search', '').lower()
-    month = request.args.get('month', '')
-
     filtered_data = workhours_data.copy()
 
     # 按姓名或ID筛选
     if search:
         filtered_data = [
             item for item in filtered_data
-            if search in item['name'].lower() or search in item['id'].lower()
+            if search.lower() in item['name'].lower() or search.lower() in item['id'].lower()
         ]
 
     # 按月份筛选
     if month:
         filtered_data = [item for item in filtered_data if item['month'] == month]
 
-    return jsonify(filtered_data)
+    return filtered_data
 
 
-@app.route('/api/workhours', methods=['POST'])
-def create_workhour():
+@app.post('/api/workhours', status_code=201, response_model=dict)
+async def create_workhour(workhour: WorkHourCreate):
     """
     创建工时记录
     """
-    data = request.get_json()
-
-    # 数据验证
-    required_fields = ['name', 'id', 'hours', 'month']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"缺少必填字段: {field}"}), 400
-
     # 添加新记录
     new_record = {
-        "name": data['name'],
-        "id": data['id'],
-        "hours": data['hours'],
-        "month": data['month']
+        "name": workhour.name,
+        "id": workhour.id,
+        "hours": workhour.hours,
+        "month": workhour.month
     }
     workhours_data.append(new_record)
 
-    return jsonify({"message": "工时记录创建成功", "data": new_record}), 201
+    return {"message": "工时记录创建成功", "data": new_record}
 
 
-@app.route('/api/shifts', methods=['GET'])
-def get_shifts():
+@app.get('/api/shifts', response_model=List[dict])
+async def get_shifts(
+    search: str = Query(None, description="按姓名搜索"),
+    shiftType: str = Query(None, alias="shiftType", description="按班次类型筛选")
+):
     """
     获取班次数据列表
     支持按姓名、班次类型筛选
     """
-    search = request.args.get('search', '').lower()
-    shift_type = request.args.get('shiftType', '')
-
     filtered_data = shifts_data.copy()
 
     # 按姓名筛选
     if search:
-        filtered_data = [item for item in filtered_data if search in item['name'].lower()]
+        filtered_data = [item for item in filtered_data if search.lower() in item['name'].lower()]
 
     # 按班次类型筛选
-    if shift_type:
-        filtered_data = [item for item in filtered_data if item['shift'] == shift_type]
+    if shiftType:
+        filtered_data = [item for item in filtered_data if item['shift'] == shiftType]
 
-    return jsonify(filtered_data)
+    return filtered_data
 
 
-@app.route('/api/shifts', methods=['POST'])
-def create_shift():
+@app.post('/api/shifts', status_code=201, response_model=dict)
+async def create_shift(shift: ShiftCreate):
     """
     创建班次记录
     """
-    data = request.get_json()
-
-    # 数据验证
-    required_fields = ['name', 'shift', 'personalShifts', 'totalShifts']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"缺少必填字段: {field}"}), 400
-
     # 计算比例
-    personal_ratio = (data['personalShifts'] / data['totalShifts'] * 100) if data['totalShifts'] > 0 else 0
+    personal_ratio = (shift.personalShifts / shift.totalShifts * 100) if shift.totalShifts > 0 else 0
 
     # 添加新记录
     new_record = {
-        "name": data['name'],
-        "shift": data['shift'],
-        "personalShifts": data['personalShifts'],
-        "totalShifts": data['totalShifts'],
+        "name": shift.name,
+        "shift": shift.shift,
+        "personalShifts": shift.personalShifts,
+        "totalShifts": shift.totalShifts,
         "personalRatio": round(personal_ratio, 1),
-        "historicalRatio": data.get('historicalRatio', personal_ratio)
+        "historicalRatio": shift.historicalRatio if shift.historicalRatio is not None else personal_ratio
     }
     shifts_data.append(new_record)
 
-    return jsonify({"message": "班次记录创建成功", "data": new_record}), 201
+    return {"message": "班次记录创建成功", "data": new_record}
 
 
-@app.route('/api/positions', methods=['GET'])
-def get_positions():
+@app.get('/api/positions', response_model=List[dict])
+async def get_positions(
+    search: str = Query(None, description="按岗位ID搜索"),
+    month: str = Query(None, description="按月份筛选")
+):
     """
     获取岗位工作数据列表
     支持按岗位ID、月份筛选
     """
-    search = request.args.get('search', '').lower()
-    month = request.args.get('month', '')
-
     filtered_data = positions_data.copy()
 
     # 按岗位ID筛选
     if search:
-        filtered_data = [item for item in filtered_data if search in item['positionId'].lower()]
+        filtered_data = [item for item in filtered_data if search.lower() in item['positionId'].lower()]
 
     # 按月份筛选
     if month:
         filtered_data = [item for item in filtered_data if item['month'] == month]
 
-    return jsonify(filtered_data)
+    return filtered_data
 
 
-@app.route('/api/positions', methods=['POST'])
-def create_position():
+@app.post('/api/positions', status_code=201, response_model=dict)
+async def create_position(position: PositionCreate):
     """
     创建岗位工作记录
     """
-    data = request.get_json()
-
-    # 数据验证
-    required_fields = ['positionId', 'personalShifts', 'positionShifts']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"缺少必填字段: {field}"}), 400
-
     # 计算期望工作占比
-    expected_ratio = (data['personalShifts'] / data['positionShifts'] * 100) if data['positionShifts'] > 0 else 0
+    expected_ratio = (position.personalShifts / position.positionShifts * 100) if position.positionShifts > 0 else 0
 
     # 添加新记录
     new_record = {
-        "positionId": data['positionId'],
-        "personalShifts": data['personalShifts'],
-        "positionShifts": data['positionShifts'],
+        "positionId": position.positionId,
+        "personalShifts": position.personalShifts,
+        "positionShifts": position.positionShifts,
         "expectedRatio": round(expected_ratio, 1),
-        "month": data.get('month', datetime.now().strftime('%Y-%m'))
+        "month": position.month if position.month else datetime.now().strftime('%Y-%m')
     }
     positions_data.append(new_record)
 
-    return jsonify({"message": "岗位工作记录创建成功", "data": new_record}), 201
+    return {"message": "岗位工作记录创建成功", "data": new_record}
 
 
-@app.errorhandler(404)
-def not_found(error):
+@app.get('/{file_path:path}')
+async def serve_static(file_path: str):
     """
-    404错误处理
+    服务静态文件和页面
+    支持SPA路由
     """
-    return jsonify({"error": "资源未找到"}), 404
+    frontend_path = get_frontend_path()
 
+    # 如果是API请求，返回404
+    if file_path.startswith('api/'):
+        return JSONResponse(
+            status_code=404,
+            content={"error": "API endpoint not found"}
+        )
 
-@app.errorhandler(500)
-def internal_error(error):
-    """
-    500错误处理
-    """
-    return jsonify({"error": "服务器内部错误"}), 500
+    # 检查文件是否存在
+    full_path = os.path.join(frontend_path, file_path)
+    if os.path.exists(full_path) and os.path.isfile(full_path):
+        return FileResponse(full_path)
+
+    # 如果文件不存在，返回index.html（SPA路由支持）
+    index_path = os.path.join(frontend_path, 'index.html')
+    return FileResponse(index_path)
 
 
 if __name__ == '__main__':
-    # 启动Flask开发服务器
-    # 生产环境应使用Gunicorn或uWSGI
-    app.run(
+    import uvicorn
+    # 启动FastAPI开发服务器
+    # 生产环境应使用Gunicorn或uvicorn
+    uvicorn.run(
+        "app:app",
         host='0.0.0.0',
         port=5000,
-        debug=True
+        reload=True
     )
