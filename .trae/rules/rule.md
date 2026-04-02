@@ -1,0 +1,3 @@
+这是一个windows的APP项目
+用网页技术封装成APP在windows上运行
+后端代码是python

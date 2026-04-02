@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拜耳制药排班系统 - 数据分析平台</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部导航 -->
+        <header class="header">
+            <h1>🏥 拜耳制药排班系统 - 数据分析平台</h1>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item active">📊 数据总览</a>
+                <a href="pages/leaves.html" class="nav-item">📋 请假表</a>
+                <a href="pages/workhours.html" class="nav-item">⏰ 工时数据</a>
+                <a href="pages/shifts.html" class="nav-item">🗂️ 班次数据</a>
+                <a href="pages/positions.html" class="nav-item">💼 岗位工作</a>
+            </nav>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <h2 class="page-title">数据总览</h2>
+
+            <!-- 统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>总员工数</h3>
+                    <div class="stat-value" id="totalEmployees">-</div>
+                    <div class="stat-label">人</div>
+                </div>
+                <div class="stat-card">
+                    <h3>本月请假人数</h3>
+                    <div class="stat-value" id="totalLeaves">-</div>
+                    <div class="stat-label">人</div>
+                </div>
+                <div class="stat-card">
+                    <h3>本月总工时</h3>
+                    <div class="stat-value" id="totalWorkHours">-</div>
+                    <div class="stat-label">小时</div>
+                </div>
+                <div class="stat-card">
+                    <h3>本月排班总数</h3>
+                    <div class="stat-value" id="totalShifts">-</div>
+                    <div class="stat-label">次</div>
+                </div>
+            </div>
+
+            <!-- 数据快速预览 -->
+            <h3 style="color: #667eea; margin: 30px 0 20px;">📈 最新数据预览</h3>
+
+            <!-- 请假数据预览 -->
+            <div style="margin-bottom: 30px;">
+                <h4 style="color: #764ba2; margin-bottom: 15px;">最近请假记录</h4>
+                <table class="data-table" id="leavesPreview">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>请假日期</th>
+                            <th>排班请假</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leavesPreviewBody">
+                        <tr>
+                            <td colspan="4" class="loading">
+                                <div class="spinner"></div>
+                                加载中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="pages/leaves.html" class="btn">查看全部请假记录 →</a>
+                </div>
+            </div>
+
+            <!-- 工时数据预览 -->
+            <div style="margin-bottom: 30px;">
+                <h4 style="color: #764ba2; margin-bottom: 15px;">员工工时排名（前5）</h4>
+                <table class="data-table" id="workHoursPreview">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>员工ID</th>
+                            <th>已有工时</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workHoursPreviewBody">
+                        <tr>
+                            <td colspan="4" class="loading">
+                                <div class="spinner"></div>
+                                加载中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="pages/workhours.html" class="btn">查看全部工时数据 →</a>
+                </div>
+            </div>
+
+            <!-- 班次数据预览 -->
+            <div style="margin-bottom: 30px;">
+                <h4 style="color: #764ba2; margin-bottom: 15px;">班次分配概览（前5）</h4>
+                <table class="data-table" id="shiftsPreview">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>班次</th>
+                            <th>个人班次比例</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shiftsPreviewBody">
+                        <tr>
+                            <td colspan="4" class="loading">
+                                <div class="spinner"></div>
+                                加载中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="pages/shifts.html" class="btn">查看全部班次数据 →</a>
+                </div>
+            </div>
+
+            <!-- 岗位工作预览 -->
+            <div style="margin-bottom: 30px;">
+                <h4 style="color: #764ba2; margin-bottom: 15px;">岗位工作分配（前5）</h4>
+                <table class="data-table" id="positionsPreview">
+                    <thead>
+                        <tr>
+                            <th>岗位ID</th>
+                            <th>个人班次</th>
+                            <th>岗位班次</th>
+                            <th>期望工作占比</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionsPreviewBody">
+                        <tr>
+                            <td colspan="4" class="loading">
+                                <div class="spinner"></div>
+                                加载中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="pages/positions.html" class="btn">查看全部岗位数据 →</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // 页面加载完成后获取数据
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
+
+        /**
+         * 加载仪表板数据
+         * 从后端API获取所有统计数据并更新页面
+         */
+        function loadDashboardData() {
+            // 模拟从后端API获取数据
+            // 实际项目中应替换为真实的API调用
+            fetch('/api/dashboard/stats')
+                .then(response => response.json())
+                .then(data => {
+                    updateDashboardStats(data);
+                })
+                .catch(error => {
+                    console.error('加载仪表板数据失败:', error);
+                    // 使用示例数据作为备选
+                    loadSampleData();
+                });
+        }
+
+        /**
+         * 更新仪表板统计数据
+         * @param {Object} data - 从API获取的统计数据
+         */
+        function updateDashboardStats(data) {
+            document.getElementById('totalEmployees').textContent = data.totalEmployees || 0;
+            document.getElementById('totalLeaves').textContent = data.totalLeaves || 0;
+            document.getElementById('totalWorkHours').textContent = data.totalWorkHours || 0;
+            document.getElementById('totalShifts').textContent = data.totalShifts || 0;
+        }
+
+        /**
+         * 加载示例数据用于演示
+         * 当API不可用时使用此函数显示示例数据
+         */
+        function loadSampleData() {
+            // 示例统计数据
+            document.getElementById('totalEmployees').textContent = '50';
+            document.getElementById('totalLeaves').textContent = '8';
+            document.getElementById('totalWorkHours').textContent = '3280';
+            document.getElementById('totalShifts').textContent = '156';
+
+            // 示例请假数据
+            const leavesData = [
+                { name: '张三', date: '2026-04-01', scheduled: '是' },
+                { name: '李四', date: '2026-04-02', scheduled: '否' },
+                { name: '王五', date: '2026-04-03', scheduled: '是' }
+            ];
+            renderLeavesPreview(leavesData);
+
+            // 示例工时数据
+            const workHoursData = [
+                { name: '赵六', id: 'EMP001', hours: 168 },
+                { name: '孙七', id: 'EMP002', hours: 160 },
+                { name: '周八', id: 'EMP003', hours: 152 },
+                { name: '吴九', id: 'EMP004', hours: 144 },
+                { name: '郑十', id: 'EMP005', hours: 136 }
+            ];
+            renderWorkHoursPreview(workHoursData);
+
+            // 示例班次数据
+            const shiftsData = [
+                { name: '钱一', shift: '早班', personalRatio: '85%' },
+                { name: '孙二', shift: '中班', personalRatio: '78%' },
+                { name: '李三', shift: '晚班', personalRatio: '92%' },
+                { name: '周四', shift: '早班', personalRatio: '70%' },
+                { name: '吴五', shift: '中班', personalRatio: '88%' }
+            ];
+            renderShiftsPreview(shiftsData);
+
+            // 示例岗位数据
+            const positionsData = [
+                { positionId: 'P001', personalShifts: 20, positionShifts: 45, expectedRatio: '44%' },
+                { positionId: 'P002', personalShifts: 15, positionShifts: 30, expectedRatio: '50%' },
+                { positionId: 'P003', personalShifts: 18, positionShifts: 40, expectedRatio: '45%' },
+                { positionId: 'P004', personalShifts: 12, positionShifts: 25, expectedRatio: '48%' },
+                { positionId: 'P005', personalShifts: 22, positionShifts: 50, expectedRatio: '44%' }
+            ];
+            renderPositionsPreview(positionsData);
+        }
+
+        /**
+         * 渲染请假预览数据
+         * @param {Array} data - 请假数据数组
+         */
+        function renderLeavesPreview(data) {
+            const tbody = document.getElementById('leavesPreviewBody');
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td class="cell-name">${item.name}</td>
+                    <td>${item.date}</td>
+                    <td><span class="cell-badge ${item.scheduled === '是' ? 'warning' : 'success'}">${item.scheduled}</span></td>
+                    <td><a href="pages/leaves.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">查看</a></td>
+                </tr>
+            `).join('');
+        }
+
+        /**
+         * 渲染工时预览数据
+         * @param {Array} data - 工时数据数组
+         */
+        function renderWorkHoursPreview(data) {
+            const tbody = document.getElementById('workHoursPreviewBody');
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td class="cell-name">${item.name}</td>
+                    <td class="cell-id">${item.id}</td>
+                    <td><span class="cell-percentage">${item.hours}小时</span></td>
+                    <td><a href="pages/workhours.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">查看</a></td>
+                </tr>
+            `).join('');
+        }
+
+        /**
+         * 渲染班次预览数据
+         * @param {Array} data - 班次数据数组
+         */
+        function renderShiftsPreview(data) {
+            const tbody = document.getElementById('shiftsPreviewBody');
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td class="cell-name">${item.name}</td>
+                    <td><span class="cell-badge">${item.shift}</span></td>
+                    <td><span class="cell-percentage">${item.personalRatio}</span></td>
+                    <td><a href="pages/shifts.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">查看</a></td>
+                </tr>
+            `).join('');
+        }
+
+        /**
+         * 渲染岗位工作预览数据
+         * @param {Array} data - 岗位数据数组
+         */
+        function renderPositionsPreview(data) {
+            const tbody = document.getElementById('positionsPreviewBody');
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td class="cell-id">${item.positionId}</td>
+                    <td>${item.personalShifts}</td>
+                    <td>${item.positionShifts}</td>
+                    <td><span class="cell-percentage">${item.expectedRatio}</span></td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
