@@ -114,8 +114,9 @@ def get_frontend_path():
     """
     import sys
     if getattr(sys, 'frozen', False):
-        # PyInstaller打包后的exe模式
-        base_path = os.path.dirname(sys.executable)
+        # PyInstaller打包后的exe模式 - 单文件模式
+        # 数据文件在临时目录中
+        base_path = sys._MEIPASS
     else:
         # 开发环境模式
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
