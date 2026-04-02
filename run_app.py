@@ -12,7 +12,7 @@ import os
 import sys
 import webbrowser
 from threading import Timer
-
+import uvicorn
 
 def get_application_path():
     """
@@ -60,7 +60,6 @@ def main():
     try:
         # 导入FastAPI应用
         from backend.app import app
-        import uvicorn
 
         # 检查前端文件是否存在
         frontend_path = os.path.join(app_root, 'frontend')
@@ -71,9 +70,9 @@ def main():
         # 启动URL
         server_url = "http://127.0.0.1:5000/"
 
-        print(f"\n✓ 服务器启动成功！")
-        print(f"✓ 访问地址: {server_url}")
-        print(f"✓ API文档地址: {server_url}docs")
+        print(f"\n[OK] 服务器启动成功!")
+        print(f"[OK] 访问地址: {server_url}")
+        print(f"[OK] API文档地址: {server_url}docs")
         print(f"\n将在浏览器中自动打开应用...")
         print(f"\n按 Ctrl+C 或关闭此窗口停止服务器。")
         print("=" * 60)
@@ -94,14 +93,24 @@ def main():
         print(f"\n错误: 导入模块失败 - {e}")
         print("\n请确保已安装所有依赖：")
         print("  pip install -r requirements.txt")
-        input("\n按Enter键退出...")
+        print("\n按任意键退出...")
+        if sys.stdout.isatty():
+            input()
+        else:
+            import time
+            time.sleep(3)
         sys.exit(1)
 
     except Exception as e:
         print(f"\n错误: {e}")
         import traceback
         traceback.print_exc()
-        input("\n按Enter键退出...")
+        print("\n按任意键退出...")
+        if sys.stdout.isatty():
+            input()
+        else:
+            import time
+            time.sleep(5)
         sys.exit(1)
 
 
