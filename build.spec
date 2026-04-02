@@ -31,45 +31,15 @@ a = Analysis(
         # 格式: ('源路径', '目标目录名')
         # 前端文件将被打包到 frontend/ 目录下
         (os.path.join(root_dir, 'frontend'), 'frontend'),
-        (os.path.join(root_dir, 'backend'), 'backend'),
     ],
 
     # 隐藏导入 - 确保这些模块被打包
     hiddenimports=[
-        # FastAPI核心模块
-        'fastapi',
-        'uvicorn',
-        'uvicorn.logging',
-        'uvicorn.loops',
-        'uvicorn.loops.auto',
-        'uvicorn.protocols',
-        'uvicorn.protocols.http',
-        'uvicorn.protocols.http.auto',
-        'uvicorn.protocols.websockets',
-        'uvicorn.protocols.websockets.auto',
-        'uvicorn.lifespan',
-        'uvicorn.lifespan.on',
-
-        # Pydantic模块
-        'pydantic',
-        'pydantic.fields',
-        'pydantic.validators',
-        'pydantic.main',
-        'pydantic.basemodel',
-
-        # Starlette模块（FastAPI依赖）
-        'starlette',
-        'starlette.applications',
-        'starlette.routing',
-        'starlette.middleware',
-        'starlette.middleware.cors',
-        'starlette.responses',
-        'starlette.requests',
-
-        # AnyIO模块（异步支持）
-        'anyio',
-        'anyio.to_process',
-
+        *collect_submodules('fastapi'),
+        *collect_submodules('uvicorn'),
+        *collect_submodules('pydantic'),
+        *collect_submodules('starlette'),
+        *collect_submodules('anyio'),
         # 标准库模块
         'webbrowser',
         'threading',
@@ -108,86 +78,19 @@ a = Analysis(
 # 收集所有数据文件
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-# 创建可执行文件
+# 创建单文件可执行文件
 exe = EXE(
-    # Python模块归档
     pyz,
-
-    # 脚本文件
     a.scripts,
-
-    # 二进制文件
-    [],
-
-    # 排除二进制文件到单独目录
-    exclude_binaries=True,
-
-    # 可执行文件名（Windows下会添加.exe后缀）
-    name='拜耳排班系统',
-
-    # 调试模式
-    debug=False,
-
-    # 启动脚本去除签名
-    bootloader_ignore_signals=False,
-
-    # 去除符号表
-    strip=False,
-
-    # 使用UPX压缩
-    upx=False,
-
-    # 控制台模式
-    # False = 窗口模式（不显示控制台窗口）
-    # True = 控制台模式（显示黑色控制台窗口）
-    console=False,
-
-    # 窗口图标（可选）
-    # icon='app.ico',
-
-    # 禁用窗口化回溯
-    disable_windowed_traceback=False,
-
-    # argv模拟
-    argv_emulation=False,
-
-    # 目标架构
-    target_arch=None,
-
-    # 代码签名
-    codesign_identity=None,
-
-    # 权限文件
-    entitlements_file=None,
-)
-
-# 收集所有文件到输出目录
-coll = COLLECT(
-    # 可执行文件
-    exe,
-
-    # 二进制文件
     a.binaries,
-
-    # ZIP文件
     a.zipfiles,
-
-    # 数据文件
     a.datas,
-
-    # 去除符号表
+    name='拜耳排班系统_v3',
+    debug=False,
+    bootloader_ignore_signals=False,
     strip=False,
+    upx=True,
+    runtime_tmpdir=None,
+    console=True,  # 设置为True以显示控制台窗口，方便调试
 
-    # 使用UPX压缩
-    upx=False,
-
-    # UPX排除列表
-    upx_exclude=[],
-
-    # 输出目录名
-    name='拜耳排班系统',
-
-    # 目录模式（True = 创建单文件夹，False = 扁平结构）
-    # 建议保持False，因为有些依赖需要目录结构
-    console=False,
 )
