@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班次数据 - 拜耳制药排班系统</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部导航 -->
+        <header class="header">
+            <h1>🏥 拜耳制药排班系统 - 数据分析平台</h1>
+            <nav class="nav-menu">
+                <a href="../index.html" class="nav-item">📊 数据总览</a>
+                <a href="leaves.html" class="nav-item">📋 请假表</a>
+                <a href="workhours.html" class="nav-item">⏰ 工时数据</a>
+                <a href="shifts.html" class="nav-item active">🗂️ 班次数据</a>
+                <a href="positions.html" class="nav-item">💼 岗位工作</a>
+            </nav>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <h2 class="page-title">班次数据</h2>
+
+            <!-- 筛选和搜索区域 -->
+            <div class="filter-section">
+                <input type="text" class="search-input" placeholder="🔍 搜索员工姓名..." id="searchInput" onkeyup="filterTable()">
+                <select class="filter-select" id="shiftTypeFilter" onchange="filterTable()">
+                    <option value="">全部班次</option>
+                    <option value="早班">早班</option>
+                    <option value="中班">中班</option>
+                    <option value="晚班">晚班</option>
+                    <option value="夜班">夜班</option>
+                </select>
+                <select class="filter-select" id="ratioSort" onchange="filterTable()">
+                    <option value="">默认排序</option>
+                    <option value="desc">比例从高到低</option>
+                    <option value="asc">比例从低到高</option>
+                </select>
+            </div>
+
+            <!-- 班次统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>总班次数</h3>
+                    <div class="stat-value" id="totalShiftsCount">-</div>
+                    <div class="stat-label">次</div>
+                </div>
+                <div class="stat-card">
+                    <h3>本月排班人数</h3>
+                    <div class="stat-value" id="totalEmployees">-</div>
+                    <div class="stat-label">人</div>
+                </div>
+                <div class="stat-card">
+                    <h3>平均个人比例</h3>
+                    <div class="stat-value" id="avgPersonalRatio">-</div>
+                    <div class="stat-label">%</div>
+                </div>
+                <div class="stat-card">
+                    <h3>平均历史比例</h3>
+                    <div class="stat-value" id="avgHistoricalRatio">-</div>
+                    <div class="stat-label">%</div>
+                </div>
+            </div>
+
+            <!-- 班次数据表格 -->
+            <table class="data-table" id="shiftsTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)" class="tooltip" data-tooltip="点击排序">姓名 ↕</th>
+                        <th onclick="sortTable(1)" class="tooltip" data-tooltip="点击排序">班次 ↕</th>
+                        <th onclick="sortTable(2)" class="tooltip" data-tooltip="点击排序">个人班次数 ↕</th>
+                        <th onclick="sortTable(3)" class="tooltip" data-tooltip="点击排序">总班次数 ↕</th>
+                        <th onclick="sortTable(4)" class="tooltip" data-tooltip="点击排序">个人班次比例 ↕</th>
+                        <th onclick="sortTable(5)" class="tooltip" data-tooltip="点击排序">历史班次比例 ↕</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="shiftsTableBody">
+                    <tr>
+                        <td colspan="7" class="loading">
+                            <div class="spinner"></div>
+                            加载中...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 分页控制 -->
+            <div class="pagination" id="pagination"></div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script>
+        /**
+         * 班次数据管理脚本
+         * 处理班次数据的显示、筛选、排序和统计功能
+         */
+
+        let shiftsData = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        /**
+         * 页面加载完成后初始化班次数据
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            loadShiftsData();
+        });
+
+        /**
+         * 从后端API加载班次数据
+         */
+        function loadShiftsData() {
+            // 模拟从后端API获取数据
+            fetch('/api/shifts')
+                .then(response => response.json())
+                .then(data => {
+                    shiftsData = data;
+                    updateStats();
+                    renderTable();
+                })
+                .catch(error => {
+                    console.error('加载班次数据失败:', error);
+                    // 使用示例数据
+                    loadSampleShiftsData();
+                });
+        }
+
+        /**
+         * 加载示例班次数据用于演示
+         */
+        function loadSampleShiftsData() {
+            shiftsData = [
+                { name: '钱一', shift: '早班', personalShifts: 15, totalShifts: 20, personalRatio: 75, historicalRatio: 70 },
+                { name: '孙二', shift: '中班', personalShifts: 18, totalShifts: 22, personalRatio: 81.8, historicalRatio: 75 },
+                { name: '李三', shift: '晚班', personalShifts: 12, totalShifts: 25, personalRatio: 48, historicalRatio: 60 },
+                { name: '周四', shift: '早班', personalShifts: 20, totalShifts: 30, personalRatio: 66.7, historicalRatio: 65 },
+                { name: '吴五', shift: '中班', personalShifts: 16, totalShifts: 18, personalRatio: 88.9, historicalRatio: 80 },
+                { name: '郑六', shift: '夜班', personalShifts: 10, totalShifts: 15, personalRatio: 66.7, historicalRatio: 55 },
+                { name: '王七', shift: '早班', personalShifts: 22, totalShifts: 28, personalRatio: 78.6, historicalRatio: 72 },
+                { name: '赵八', shift: '晚班', personalShifts: 14, totalShifts: 20, personalRatio: 70, historicalRatio: 68 },
+                { name: '孙九', shift: '中班', personalShifts: 19, totalShifts: 24, personalRatio: 79.2, historicalRatio: 78 },
+                { name: '周十', shift: '早班', personalShifts: 17, totalShifts: 26, personalRatio: 65.4, historicalRatio: 62 },
+                { name: '吴一', shift: '夜班', personalShifts: 11, totalShifts: 16, personalRatio: 68.8, historicalRatio: 58 },
+                { name: '郑二', shift: '中班', personalShifts: 21, totalShifts: 27, personalRatio: 77.8, historicalRatio: 74 },
+                { name: '王三', shift: '早班', personalShifts: 13, totalShifts: 19, personalRatio: 68.4, historicalRatio: 66 },
+                { name: '赵四', shift: '晚班', personalShifts: 15, totalShifts: 21, personalRatio: 71.4, historicalRatio: 69 },
+                { name: '孙五', shift: '中班', personalShifts: 23, totalShifts: 29, personalRatio: 79.3, historicalRatio: 76 }
+            ];
+            updateStats();
+            renderTable();
+        }
+
+        /**
+         * 更新班次统计数据
+         */
+        function updateStats() {
+            const filteredData = getFilteredData();
+            const totalShifts = filteredData.reduce((sum, item) => sum + item.personalShifts, 0);
+            const uniqueEmployees = new Set(filteredData.map(item => item.name)).size;
+            const avgPersonalRatio = filteredData.length > 0
+                ? (filteredData.reduce((sum, item) => sum + item.personalRatio, 0) / filteredData.length).toFixed(1)
+                : 0;
+            const avgHistoricalRatio = filteredData.length > 0
+                ? (filteredData.reduce((sum, item) => sum + item.historicalRatio, 0) / filteredData.length).toFixed(1)
+                : 0;
+
+            document.getElementById('totalShiftsCount').textContent = totalShifts;
+            document.getElementById('totalEmployees').textContent = uniqueEmployees;
+            document.getElementById('avgPersonalRatio').textContent = avgPersonalRatio;
+            document.getElementById('avgHistoricalRatio').textContent = avgHistoricalRatio;
+        }
+
+        /**
+         * 渲染班次表格
+         */
+        function renderTable() {
+            const filteredData = getFilteredData();
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            const tbody = document.getElementById('shiftsTableBody');
+
+            if (pageData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
+                            暂无数据
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = pageData.map((item, index) => {
+                    const personalPercentage = item.personalRatio.toFixed(1);
+                    const historicalPercentage = item.historicalRatio.toFixed(1);
+                    const isHighRatio = item.personalRatio > 80;
+                    const isLowRatio = item.personalRatio < 50;
+
+                    return `
+                        <tr>
+                            <td class="cell-name">${item.name}</td>
+                            <td><span class="cell-badge">${item.shift}</span></td>
+                            <td>${item.personalShifts}</td>
+                            <td>${item.totalShifts}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="progress-bar" style="flex: 1;">
+                                        <div class="progress-bar-fill" style="width: ${personalPercentage}%;"></div>
+                                    </div>
+                                    <span class="cell-percentage" style="${isHighRatio ? 'background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);' : isLowRatio ? 'background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);' : ''}">
+                                        ${personalPercentage}%
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="progress-bar" style="flex: 1;">
+                                        <div class="progress-bar-fill" style="width: ${historicalPercentage}%; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"></div>
+                                    </div>
+                                    <span style="min-width: 50px; font-size: 12px; color: #666;">${historicalPercentage}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;"
+                                        onclick="viewShiftDetail(${startIndex + index})">
+                                    详情
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            renderPagination(filteredData.length);
+        }
+
+        /**
+         * 获取筛选后的数据
+         * @returns {Array} 筛选后的数据
+         */
+        function getFilteredData() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const shiftTypeValue = document.getElementById('shiftTypeFilter').value;
+            const sortValue = document.getElementById('ratioSort').value;
+
+            let filtered = shiftsData.filter(item => {
+                const matchSearch = item.name.toLowerCase().includes(searchValue);
+                const matchShiftType = shiftTypeValue === '' || item.shift === shiftTypeValue;
+                return matchSearch && matchShiftType;
+            });
+
+            // 排序
+            if (sortValue === 'desc') {
+                filtered.sort((a, b) => b.personalRatio - a.personalRatio);
+            } else if (sortValue === 'asc') {
+                filtered.sort((a, b) => a.personalRatio - b.personalRatio);
+            }
+
+            return filtered;
+        }
+
+        /**
+         * 筛选表格数据
+         */
+        function filterTable() {
+            currentPage = 1;
+            updateStats();
+            renderTable();
+        }
+
+        /**
+         * 排序表格数据
+         * @param {number} columnIndex - 列索引
+         */
+        function sortTable(columnIndex) {
+            const keys = ['name', 'shift', 'personalShifts', 'totalShifts', 'personalRatio', 'historicalRatio'];
+            const key = keys[columnIndex];
+
+            shiftsData.sort((a, b) => {
+                if (typeof a[key] === 'string') {
+                    return a[key].localeCompare(b[key]);
+                }
+                return a[key] - b[key];
+            });
+
+            renderTable();
+        }
+
+        /**
+         * 渲染分页控件
+         * @param {number} totalItems - 总数据条数
+         */
+        function renderPagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">上一页</button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<span style="padding: 10px;">...</span>';
+                }
+            }
+
+            html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">下一页</button>`;
+
+            pagination.innerHTML = html;
+        }
+
+        /**
+         * 切换分页
+         * @param {number} page - 目标页码
+         */
+        function changePage(page) {
+            const totalPages = Math.ceil(getFilteredData().length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderTable();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        /**
+         * 查看班次详情
+         * @param {number} index - 数据索引
+         */
+        function viewShiftDetail(index) {
+            const filteredData = getFilteredData();
+            const actualIndex = shiftsData.indexOf(filteredData[index]);
+            const item = shiftsData[actualIndex];
+            alert(`班次详情：\n\n姓名：${item.name}\n班次：${item.shift}\n个人班次数：${item.personalShifts}\n总班次数：${item.totalShifts}\n个人班次比例：${item.personalRatio.toFixed(1)}%\n历史班次比例：${item.historicalRatio.toFixed(1)}%\n\n（实际项目中应跳转到详情页面或打开模态框）`);
+        }
+    </script>
+</body>
+</html>

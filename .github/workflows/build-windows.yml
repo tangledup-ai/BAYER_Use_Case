@@ -1,0 +1,59 @@
+name: Build Windows Executable
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: '应用名称'
+        required: false
+        default: '拜耳排班系统'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install flask flask-cors pyinstaller
+
+      - name: Build Windows executable
+        run: |
+          pyinstaller build.spec --clean --noconfirm
+
+      - name: Verify build
+        run: |
+          if (Test-Path "dist\拜耳排班系统\拜耳排班系统.exe") {
+            Write-Host "Build successful!"
+            Get-ChildItem "dist\拜耳排班系统" -Recurse | Measure-Object -Property Length -Sum | ForEach-Object {
+              Write-Host "Total size: $([math]::Round($_.Sum / 1MB, 2)) MB"
+            }
+          } else {
+            Write-Host "Build failed!"
+            exit 1
+          }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Executable
+          path: dist/拜耳排班系统/
+          retention-days: 30
+
+      - name: Create zip archive
+        run: |
+          Compress-Archive -Path "dist\拜耳排班系统" -DestinationPath "dist\拜耳排班系统.zip" -Force
+
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Executable-Zip
+          path: dist/拜耳排班系统.zip
+          retention-days: 30

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>请假表 - 拜耳制药排班系统</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部导航 -->
+        <header class="header">
+            <h1>🏥 拜耳制药排班系统 - 数据分析平台</h1>
+            <nav class="nav-menu">
+                <a href="../index.html" class="nav-item">📊 数据总览</a>
+                <a href="leaves.html" class="nav-item active">📋 请假表</a>
+                <a href="workhours.html" class="nav-item">⏰ 工时数据</a>
+                <a href="shifts.html" class="nav-item">🗂️ 班次数据</a>
+                <a href="positions.html" class="nav-item">💼 岗位工作</a>
+            </nav>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <h2 class="page-title">请假表</h2>
+
+            <!-- 筛选和搜索区域 -->
+            <div class="filter-section">
+                <input type="text" class="search-input" placeholder="🔍 搜索员工姓名..." id="searchInput" onkeyup="filterTable()">
+                <select class="filter-select" id="scheduledFilter" onchange="filterTable()">
+                    <option value="">全部</option>
+                    <option value="是">已排班请假</option>
+                    <option value="否">未排班请假</option>
+                </select>
+                <select class="filter-select" id="monthFilter" onchange="filterTable()">
+                    <option value="">全部月份</option>
+                    <option value="2026-04">2026年4月</option>
+                    <option value="2026-03">2026年3月</option>
+                    <option value="2026-02">2026年2月</option>
+                </select>
+            </div>
+
+            <!-- 请假统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>本月请假总数</h3>
+                    <div class="stat-value" id="totalLeavesCount">-</div>
+                    <div class="stat-label">人次</div>
+                </div>
+                <div class="stat-card">
+                    <h3>已排班请假</h3>
+                    <div class="stat-value" id="scheduledLeavesCount">-</div>
+                    <div class="stat-label">人次</div>
+                </div>
+                <div class="stat-card">
+                    <h3>未排班请假</h3>
+                    <div class="stat-value" id="unscheduledLeavesCount">-</div>
+                    <div class="stat-label">人次</div>
+                </div>
+                <div class="stat-card">
+                    <h3>请假率</h3>
+                    <div class="stat-value" id="leaveRate">-</div>
+                    <div class="stat-label">%</div>
+                </div>
+            </div>
+
+            <!-- 请假数据表格 -->
+            <table class="data-table" id="leavesTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)" class="tooltip" data-tooltip="点击排序">姓名 ↕</th>
+                        <th onclick="sortTable(1)" class="tooltip" data-tooltip="点击排序">请假日期 ↕</th>
+                        <th onclick="sortTable(2)" class="tooltip" data-tooltip="点击排序">排班请假 ↕</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="leavesTableBody">
+                    <tr>
+                        <td colspan="4" class="loading">
+                            <div class="spinner"></div>
+                            加载中...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 分页控制 -->
+            <div class="pagination" id="pagination"></div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script>
+        /**
+         * 请假数据管理脚本
+         * 处理请假表的显示、筛选、排序和分页功能
+         */
+
+        let leavesData = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        /**
+         * 页面加载完成后初始化请假数据
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLeavesData();
+        });
+
+        /**
+         * 从后端API加载请假数据
+         */
+        function loadLeavesData() {
+            // 模拟从后端API获取数据
+            fetch('/api/leaves')
+                .then(response => response.json())
+                .then(data => {
+                    leavesData = data;
+                    updateStats();
+                    renderTable();
+                })
+                .catch(error => {
+                    console.error('加载请假数据失败:', error);
+                    // 使用示例数据
+                    loadSampleLeavesData();
+                });
+        }
+
+        /**
+         * 加载示例请假数据用于演示
+         */
+        function loadSampleLeavesData() {
+            leavesData = [
+                { name: '张三', date: '2026-04-01', scheduled: '是' },
+                { name: '李四', date: '2026-04-02', scheduled: '否' },
+                { name: '王五', date: '2026-04-03', scheduled: '是' },
+                { name: '赵六', date: '2026-04-05', scheduled: '是' },
+                { name: '孙七', date: '2026-04-06', scheduled: '否' },
+                { name: '周八', date: '2026-04-08', scheduled: '是' },
+                { name: '吴九', date: '2026-04-10', scheduled: '否' },
+                { name: '郑十', date: '2026-04-12', scheduled: '是' },
+                { name: '钱一', date: '2026-04-15', scheduled: '是' },
+                { name: '孙二', date: '2026-04-18', scheduled: '否' },
+                { name: '李三', date: '2026-04-20', scheduled: '是' },
+                { name: '周四', date: '2026-04-22', scheduled: '是' },
+                { name: '吴五', date: '2026-04-25', scheduled: '否' },
+                { name: '郑六', date: '2026-04-28', scheduled: '是' },
+                { name: '王七', date: '2026-03-15', scheduled: '是' },
+                { name: '赵八', date: '2026-03-20', scheduled: '否' },
+                { name: '孙九', date: '2026-03-25', scheduled: '是' },
+                { name: '周十', date: '2026-02-10', scheduled: '是' }
+            ];
+            updateStats();
+            renderTable();
+        }
+
+        /**
+         * 更新请假统计数据
+         */
+        function updateStats() {
+            const totalLeaves = leavesData.length;
+            const scheduledLeaves = leavesData.filter(item => item.scheduled === '是').length;
+            const unscheduledLeaves = totalLeaves - scheduledLeaves;
+            const leaveRate = totalLeaves > 0 ? ((totalLeaves / 50) * 100).toFixed(1) : 0;
+
+            document.getElementById('totalLeavesCount').textContent = totalLeaves;
+            document.getElementById('scheduledLeavesCount').textContent = scheduledLeaves;
+            document.getElementById('unscheduledLeavesCount').textContent = unscheduledLeaves;
+            document.getElementById('leaveRate').textContent = leaveRate;
+        }
+
+        /**
+         * 渲染请假表格
+         */
+        function renderTable() {
+            const filteredData = getFilteredData();
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            const tbody = document.getElementById('leavesTableBody');
+
+            if (pageData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px; color: #999;">
+                            暂无数据
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = pageData.map((item, index) => `
+                    <tr>
+                        <td class="cell-name">${item.name}</td>
+                        <td>${item.date}</td>
+                        <td>
+                            <span class="cell-badge ${item.scheduled === '是' ? 'warning' : 'success'}">
+                                ${item.scheduled}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;"
+                                    onclick="viewLeaveDetail(${startIndex + index})">
+                                详情
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            renderPagination(filteredData.length);
+        }
+
+        /**
+         * 获取筛选后的数据
+         * @returns {Array} 筛选后的数据
+         */
+        function getFilteredData() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const scheduledValue = document.getElementById('scheduledFilter').value;
+            const monthValue = document.getElementById('monthFilter').value;
+
+            return leavesData.filter(item => {
+                const matchName = item.name.toLowerCase().includes(searchValue);
+                const matchScheduled = scheduledValue === '' || item.scheduled === scheduledValue;
+                const matchMonth = monthValue === '' || item.date.startsWith(monthValue);
+                return matchName && matchScheduled && matchMonth;
+            });
+        }
+
+        /**
+         * 筛选表格数据
+         */
+        function filterTable() {
+            currentPage = 1;
+            renderTable();
+        }
+
+        /**
+         * 排序表格数据
+         * @param {number} columnIndex - 列索引
+         */
+        function sortTable(columnIndex) {
+            leavesData.sort((a, b) => {
+                const keys = ['name', 'date', 'scheduled'];
+                const key = keys[columnIndex];
+
+                if (typeof a[key] === 'string') {
+                    return a[key].localeCompare(b[key]);
+                }
+                return a[key] - b[key];
+            });
+            renderTable();
+        }
+
+        /**
+         * 渲染分页控件
+         * @param {number} totalItems - 总数据条数
+         */
+        function renderPagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            // 上一页按钮
+            html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">上一页</button>`;
+
+            // 页码按钮
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<span style="padding: 10px;">...</span>';
+                }
+            }
+
+            // 下一页按钮
+            html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">下一页</button>`;
+
+            pagination.innerHTML = html;
+        }
+
+        /**
+         * 切换分页
+         * @param {number} page - 目标页码
+         */
+        function changePage(page) {
+            const totalPages = Math.ceil(getFilteredData().length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderTable();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        /**
+         * 查看请假详情
+         * @param {number} index - 数据索引
+         */
+        function viewLeaveDetail(index) {
+            const item = leavesData[index];
+            alert(`请假详情：\n\n姓名：${item.name}\n请假日期：${item.date}\n排班请假：${item.scheduled}\n\n（实际项目中应跳转到详情页面或打开模态框）`);
+        }
+    </script>
+</body>
+</html>
