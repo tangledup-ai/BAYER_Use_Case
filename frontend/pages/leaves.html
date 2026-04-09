@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>请假表 - 拜耳制药排班系统</title>
+    <title>请假表 - 昆明拜耳制药排班系统</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
     <div class="container">
         <!-- 头部导航 -->
         <header class="header">
-            <h1>🏥 拜耳制药排班系统 - 数据分析平台</h1>
-            <nav class="nav-menu">
-                <a href="../index.html" class="nav-item">📊 数据总览</a>
-                <a href="leaves.html" class="nav-item active">📋 请假表</a>
-                <a href="workhours.html" class="nav-item">⏰ 工时数据</a>
-                <a href="shifts.html" class="nav-item">🗂️ 班次数据</a>
-                <a href="positions.html" class="nav-item">💼 岗位工作</a>
+            <div class="header-top">
+                <img src="../images/logo.jpg" alt="Bayer Logo" class="logo-img">
+                <h1>昆明拜耳制药排班系统 - 数据分析平台</h1>
+            </div>
+            <nav class="nav-menu" id="navMenu">
+                <!-- 导航将由JS动态生成 -->
             </nav>
         </header>
 
@@ -104,15 +103,49 @@
          * 页面加载完成后初始化请假数据
          */
         document.addEventListener('DOMContentLoaded', function() {
+            AuthManager.updateHeader();
+            initNav();
             loadLeavesData();
         });
+
+        /**
+         * 根据用户角色初始化导航菜单
+         */
+        function initNav() {
+            const user = StorageManager.get('user');
+            const navMenu = document.getElementById('navMenu');
+            if (!user) return;
+            
+            if (user.role === 'admin') {
+                navMenu.innerHTML = `
+                    <a href="../index.html" class="nav-item">📊 数据总览</a>
+                    <a href="shifts.html" class="nav-item">🗂️ 排班数据</a>
+                    <a href="workhours.html" class="nav-item">⏰ 工时数据</a>
+                    <a href="leaves.html" class="nav-item active">📋 请假表</a>
+                    <a href="positions.html" class="nav-item">💼 岗位工作</a>
+                `;
+            } else {
+                navMenu.innerHTML = `
+                    <a href="../index.html" class="nav-item">🗂️ 排班信息</a>
+                    <a href="../index.html?tab=leaves" class="nav-item active">📋 请假申请</a>
+                `;
+            }
+        }
 
         /**
          * 从后端API加载请假数据
          */
         function loadLeavesData() {
+            const user = AuthManager.checkAuth();
+            if (!user) return;
+            
+            let url = '/api/leaves';
+            if (user.role === 'employee') {
+                url += `?name=${encodeURIComponent(user.name)}`;
+            }
+
             // 模拟从后端API获取数据
-            fetch('/api/leaves')
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     leavesData = data;
@@ -122,14 +155,14 @@
                 .catch(error => {
                     console.error('加载请假数据失败:', error);
                     // 使用示例数据
-                    loadSampleLeavesData();
+                    loadSampleLeavesData(user);
                 });
         }
 
         /**
          * 加载示例请假数据用于演示
          */
-        function loadSampleLeavesData() {
+        function loadSampleLeavesData(user) {
             leavesData = [
                 { name: '张三', date: '2026-04-01', scheduled: '是' },
                 { name: '李四', date: '2026-04-02', scheduled: '否' },
@@ -150,6 +183,11 @@
                 { name: '孙九', date: '2026-03-25', scheduled: '是' },
                 { name: '周十', date: '2026-02-10', scheduled: '是' }
             ];
+            
+            if (user && user.role === 'employee') {
+                leavesData = leavesData.filter(i => i.name === user.name);
+            }
+            
             updateStats();
             renderTable();
         }

@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工时数据 - 拜耳制药排班系统</title>
+    <title>工时数据 - 昆明拜耳制药排班系统</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
     <div class="container">
         <!-- 头部导航 -->
         <header class="header">
-            <h1>🏥 拜耳制药排班系统 - 数据分析平台</h1>
-            <nav class="nav-menu">
-                <a href="../index.html" class="nav-item">📊 数据总览</a>
-                <a href="leaves.html" class="nav-item">📋 请假表</a>
-                <a href="workhours.html" class="nav-item active">⏰ 工时数据</a>
-                <a href="shifts.html" class="nav-item">🗂️ 班次数据</a>
-                <a href="positions.html" class="nav-item">💼 岗位工作</a>
+            <div class="header-top">
+                <img src="../images/logo.jpg" alt="Bayer Logo" class="logo-img">
+                <h1>昆明拜耳制药排班系统 - 数据分析平台</h1>
+            </div>
+            <nav class="nav-menu" id="navMenu">
+                <!-- 导航将由JS动态生成 -->
             </nav>
         </header>
 
@@ -105,15 +104,49 @@
          * 页面加载完成后初始化工时数据
          */
         document.addEventListener('DOMContentLoaded', function() {
+            AuthManager.updateHeader();
+            initNav();
             loadWorkHoursData();
         });
+
+        /**
+         * 根据用户角色初始化导航菜单
+         */
+        function initNav() {
+            const user = StorageManager.get('user');
+            const navMenu = document.getElementById('navMenu');
+            if (!user) return;
+            
+            if (user.role === 'admin') {
+                navMenu.innerHTML = `
+                    <a href="../index.html" class="nav-item">📊 数据总览</a>
+                    <a href="shifts.html" class="nav-item">🗂️ 排班数据</a>
+                    <a href="workhours.html" class="nav-item active">⏰ 工时数据</a>
+                    <a href="leaves.html" class="nav-item">📋 请假表</a>
+                    <a href="positions.html" class="nav-item">💼 岗位工作</a>
+                `;
+            } else {
+                navMenu.innerHTML = `
+                    <a href="../index.html" class="nav-item">🗂️ 排班信息</a>
+                    <a href="../index.html?tab=leaves" class="nav-item">📋 请假申请</a>
+                `;
+            }
+        }
 
         /**
          * 从后端API加载工时数据
          */
         function loadWorkHoursData() {
+            const user = AuthManager.checkAuth();
+            if (!user) return;
+            
+            let url = '/api/workhours';
+            if (user.role === 'employee') {
+                url += `?search=${encodeURIComponent(user.name)}`;
+            }
+
             // 模拟从后端API获取数据
-            fetch('/api/workhours')
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     workHoursData = data;
@@ -123,14 +156,14 @@
                 .catch(error => {
                     console.error('加载工时数据失败:', error);
                     // 使用示例数据
-                    loadSampleWorkHoursData();
+                    loadSampleWorkHoursData(user);
                 });
         }
 
         /**
          * 加载示例工时数据用于演示
          */
-        function loadSampleWorkHoursData() {
+        function loadSampleWorkHoursData(user) {
             workHoursData = [
                 { name: '赵六', id: 'EMP001', hours: 168, month: '2026-04' },
                 { name: '孙七', id: 'EMP002', hours: 160, month: '2026-04' },
@@ -151,6 +184,11 @@
                 { name: '郑二', id: 'EMP017', hours: 152, month: '2026-03' },
                 { name: '王三', id: 'EMP018', hours: 144, month: '2026-02' }
             ];
+            
+            if (user && user.role === 'employee') {
+                workHoursData = workHoursData.filter(i => i.name === user.name);
+            }
+            
             updateStats();
             renderTable();
         }

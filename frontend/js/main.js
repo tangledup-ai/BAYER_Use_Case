@@ -1,5 +1,5 @@
 /**
- * 拜耳制药排班系统 - 通用JavaScript函数库
+ * 昆明拜耳制药排班系统 - 通用JavaScript函数库
  * 提供全局工具函数和API调用接口
  */
 
@@ -378,6 +378,81 @@ function setUrlParameters(params) {
 }
 
 /**
+ * 认证和用户管理
+ */
+const AuthManager = {
+    /**
+     * 检查用户是否已登录。如果未登录且不是在登录页，则重定向到登录页。
+     */
+    checkAuth() {
+        const user = StorageManager.get('user');
+        const isLoginPage = window.location.pathname.endsWith('login.html');
+        
+        if (!user || !user.token) {
+            if (!isLoginPage) {
+                // Determine relative path back to root login page
+                const depth = window.location.pathname.split('/').filter(p => p.length > 0).indexOf('pages') !== -1 ? 1 : 0;
+                const pathPrefix = depth === 1 ? '../' : '';
+                window.location.href = pathPrefix + 'login.html';
+            }
+            return null;
+        }
+        return user;
+    },
+
+    /**
+     * 退出登录
+     */
+    logout() {
+        StorageManager.remove('user');
+        const depth = window.location.pathname.split('/').filter(p => p.length > 0).indexOf('pages') !== -1 ? 1 : 0;
+        const pathPrefix = depth === 1 ? '../' : '';
+        window.location.href = pathPrefix + 'login.html';
+    },
+
+    /**
+     * 更新页面头部展示用户信息和退出按钮
+     */
+    updateHeader() {
+        const user = this.checkAuth();
+        if (!user) return;
+
+        const header = document.querySelector('.header');
+        if (header && !document.getElementById('userInfo')) {
+            const userInfoDiv = document.createElement('div');
+            userInfoDiv.id = 'userInfo';
+            userInfoDiv.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            `;
+
+            const nameSpan = document.createElement('span');
+            nameSpan.style.color = '#333';
+            nameSpan.style.fontWeight = 'bold';
+            nameSpan.innerHTML = `👋 你好, ${user.name} <small style="color:#666;font-weight:normal;">(${user.role === 'admin' ? '管理员' : '员工'})</small>`;
+
+            const logoutBtn = document.createElement('button');
+            logoutBtn.textContent = '退出登录';
+            logoutBtn.className = 'btn btn-secondary';
+            logoutBtn.style.padding = '5px 10px';
+            logoutBtn.onclick = () => this.logout();
+
+            userInfoDiv.appendChild(nameSpan);
+            userInfoDiv.appendChild(logoutBtn);
+            
+            // Adjust header layout if necessary
+            header.style.display = 'flex';
+            header.style.justifyContent = 'space-between';
+            header.style.alignItems = 'center';
+            header.style.flexWrap = 'wrap';
+
+            header.appendChild(userInfoDiv);
+        }
+    }
+};
+
+/**
  * 导出为全局函数，供HTML页面使用
  */
 window.fetchAPI = fetchAPI;
@@ -392,3 +467,4 @@ window.StorageManager = StorageManager;
 window.animateNumber = animateNumber;
 window.getUrlParameter = getUrlParameter;
 window.setUrlParameters = setUrlParameters;
+window.AuthManager = AuthManager;

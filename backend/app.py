@@ -60,6 +60,10 @@ class PositionCreate(BaseModel):
     positionShifts: int = Field(..., description="岗位总班次数")
     month: Optional[str] = Field(None, description="月份")
 
+class LoginRequest(BaseModel):
+    """用户登录请求模型"""
+    username: str = Field(..., description="用户名")
+    password: str = Field(..., description="密码")
 
 # 模拟数据存储
 # 实际项目中应使用数据库（如MySQL、PostgreSQL、MongoDB等）
@@ -87,11 +91,31 @@ workhours_data = [
 
 # 班次数据
 shifts_data = [
-    {"name": "钱一", "shift": "早班", "personalShifts": 15, "totalShifts": 20, "personalRatio": 75, "historicalRatio": 70},
-    {"name": "孙二", "shift": "中班", "personalShifts": 18, "totalShifts": 22, "personalRatio": 81.8, "historicalRatio": 75},
-    {"name": "李三", "shift": "晚班", "personalShifts": 12, "totalShifts": 25, "personalRatio": 48, "historicalRatio": 60},
-    {"name": "周四", "shift": "早班", "personalShifts": 20, "totalShifts": 30, "personalRatio": 66.7, "historicalRatio": 65},
-    {"name": "吴五", "shift": "中班", "personalShifts": 16, "totalShifts": 18, "personalRatio": 88.9, "historicalRatio": 80},
+    {"name": "钱一", "shift": "早班", "personalShifts": 15, "totalShifts": 20, "personalRatio": 75, "historicalRatio": 70, "date": "2026-04-06"},
+    {"name": "钱一", "shift": "中班", "personalShifts": 15, "totalShifts": 20, "personalRatio": 75, "historicalRatio": 70, "date": "2026-04-07"},
+    {"name": "钱一", "shift": "晚班", "personalShifts": 15, "totalShifts": 20, "personalRatio": 75, "historicalRatio": 70, "date": "2026-04-08"},
+    {"name": "孙二", "shift": "中班", "personalShifts": 18, "totalShifts": 22, "personalRatio": 81.8, "historicalRatio": 75, "date": "2026-04-06"},
+    {"name": "孙二", "shift": "早班", "personalShifts": 18, "totalShifts": 22, "personalRatio": 81.8, "historicalRatio": 75, "date": "2026-04-07"},
+    {"name": "李三", "shift": "晚班", "personalShifts": 12, "totalShifts": 25, "personalRatio": 48, "historicalRatio": 60, "date": "2026-04-06"},
+    {"name": "周四", "shift": "早班", "personalShifts": 20, "totalShifts": 30, "personalRatio": 66.7, "historicalRatio": 65, "date": "2026-04-06"},
+    {"name": "周四", "shift": "中班", "personalShifts": 20, "totalShifts": 30, "personalRatio": 66.7, "historicalRatio": 65, "date": "2026-04-08"},
+    {"name": "吴五", "shift": "中班", "personalShifts": 16, "totalShifts": 18, "personalRatio": 88.9, "historicalRatio": 80, "date": "2026-04-07"},
+    # 员工用户的排班数据（本周 2026-04-06 ~ 2026-04-10）
+    {"name": "张三", "shift": "早班", "personalShifts": 15, "totalShifts": 20, "personalRatio": 75, "historicalRatio": 70, "date": "2026-04-06"},
+    {"name": "张三", "shift": "中班", "personalShifts": 15, "totalShifts": 20, "personalRatio": 75, "historicalRatio": 70, "date": "2026-04-07"},
+    {"name": "张三", "shift": "晚班", "personalShifts": 15, "totalShifts": 20, "personalRatio": 75, "historicalRatio": 70, "date": "2026-04-08"},
+    {"name": "张三", "shift": "早班", "personalShifts": 15, "totalShifts": 20, "personalRatio": 75, "historicalRatio": 70, "date": "2026-04-09"},
+    {"name": "张三", "shift": "中班", "personalShifts": 15, "totalShifts": 20, "personalRatio": 75, "historicalRatio": 70, "date": "2026-04-10"},
+    {"name": "李四", "shift": "中班", "personalShifts": 8, "totalShifts": 18, "personalRatio": 44.4, "historicalRatio": 50, "date": "2026-04-06"},
+    {"name": "李四", "shift": "晚班", "personalShifts": 8, "totalShifts": 18, "personalRatio": 44.4, "historicalRatio": 50, "date": "2026-04-08"},
+    {"name": "李四", "shift": "早班", "personalShifts": 8, "totalShifts": 18, "personalRatio": 44.4, "historicalRatio": 50, "date": "2026-04-09"},
+    {"name": "王五", "shift": "晚班", "personalShifts": 10, "totalShifts": 16, "personalRatio": 62.5, "historicalRatio": 58, "date": "2026-04-06"},
+    {"name": "王五", "shift": "早班", "personalShifts": 10, "totalShifts": 16, "personalRatio": 62.5, "historicalRatio": 58, "date": "2026-04-07"},
+    {"name": "王五", "shift": "中班", "personalShifts": 10, "totalShifts": 16, "personalRatio": 62.5, "historicalRatio": 58, "date": "2026-04-09"},
+    {"name": "王五", "shift": "晚班", "personalShifts": 10, "totalShifts": 16, "personalRatio": 62.5, "historicalRatio": 58, "date": "2026-04-10"},
+    {"name": "赵六", "shift": "早班", "personalShifts": 12, "totalShifts": 18, "personalRatio": 66.7, "historicalRatio": 60, "date": "2026-04-07"},
+    {"name": "赵六", "shift": "中班", "personalShifts": 12, "totalShifts": 18, "personalRatio": 66.7, "historicalRatio": 60, "date": "2026-04-08"},
+    {"name": "赵六", "shift": "晚班", "personalShifts": 12, "totalShifts": 18, "personalRatio": 66.7, "historicalRatio": 60, "date": "2026-04-10"},
 ]
 
 # 岗位数据
@@ -134,16 +158,50 @@ async def index():
     return FileResponse(index_path)
 
 
+@app.post('/api/login')
+async def login(request: LoginRequest):
+    """
+    用户登录接口
+    """
+    # 模拟用户数据库
+    users_data = [
+        {"username": "admin", "password": "123456", "role": "admin", "name": "管理员"},
+        {"username": "张三", "password": "123456", "role": "employee", "name": "张三"},
+        {"username": "李四", "password": "123456", "role": "employee", "name": "李四"},
+        {"username": "王五", "password": "123456", "role": "employee", "name": "王五"},
+        {"username": "赵六", "password": "123456", "role": "employee", "name": "赵六"},
+    ]
+    
+    for user in users_data:
+        if user["username"] == request.username and user["password"] == request.password:
+            return {
+                "message": "登录成功",
+                "data": {
+                    "token": f"mock_token_{user['username']}",
+                    "username": user["username"],
+                    "name": user["name"],
+                    "role": user["role"]
+                }
+            }
+    
+    raise HTTPException(status_code=401, detail="用户名或密码错误")
+
+
 @app.get('/api/dashboard/stats', response_model=dict)
-async def get_dashboard_stats():
+async def get_dashboard_stats(name: str = Query(None, description="员工姓名")):
     """
     获取仪表板统计数据
     """
+    # 如果传入了姓名，过滤统计数据（针对普通员工角色）
+    filtered_leaves = [l for l in leaves_data if l['name'] == name] if name else leaves_data
+    filtered_workhours = [w for w in workhours_data if w['name'] == name] if name else workhours_data
+    filtered_shifts = [s for s in shifts_data if s['name'] == name] if name else shifts_data
+    
     return {
-        "totalEmployees": 50,
-        "totalLeaves": len(leaves_data),
-        "totalWorkHours": sum(item['hours'] for item in workhours_data),
-        "totalShifts": sum(item['personalShifts'] for item in shifts_data)
+        "totalEmployees": 1 if name else 50,
+        "totalLeaves": len(filtered_leaves),
+        "totalWorkHours": sum(item['hours'] for item in filtered_workhours),
+        "totalShifts": sum(item['personalShifts'] for item in filtered_shifts)
     }
 
 

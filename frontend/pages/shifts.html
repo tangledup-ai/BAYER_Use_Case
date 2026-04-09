@@ -3,32 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>班次数据 - 拜耳制药排班系统</title>
+    <title>排班数据 - 昆明拜耳制药排班系统</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
     <div class="container">
         <!-- 头部导航 -->
         <header class="header">
-            <h1>🏥 拜耳制药排班系统 - 数据分析平台</h1>
-            <nav class="nav-menu">
-                <a href="../index.html" class="nav-item">📊 数据总览</a>
-                <a href="leaves.html" class="nav-item">📋 请假表</a>
-                <a href="workhours.html" class="nav-item">⏰ 工时数据</a>
-                <a href="shifts.html" class="nav-item active">🗂️ 班次数据</a>
-                <a href="positions.html" class="nav-item">💼 岗位工作</a>
+            <div class="header-top">
+                <img src="../images/logo.jpg" alt="Bayer Logo" class="logo-img">
+                <h1>昆明拜耳制药排班系统 - 数据分析平台</h1>
+            </div>
+            <nav class="nav-menu" id="navMenu">
+                <!-- 导航将由JS动态生成 -->
             </nav>
         </header>
 
         <!-- 主内容区域 -->
         <main class="main-content">
-            <h2 class="page-title">班次数据</h2>
+            <h2 class="page-title">排班数据</h2>
 
             <!-- 筛选和搜索区域 -->
             <div class="filter-section">
                 <input type="text" class="search-input" placeholder="🔍 搜索员工姓名..." id="searchInput" onkeyup="filterTable()">
                 <select class="filter-select" id="shiftTypeFilter" onchange="filterTable()">
-                    <option value="">全部班次</option>
+                    <option value="">全部排班</option>
                     <option value="早班">早班</option>
                     <option value="中班">中班</option>
                     <option value="晚班">晚班</option>
@@ -44,7 +43,7 @@
             <!-- 班次统计卡片 -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>总班次数</h3>
+                    <h3>总排班数</h3>
                     <div class="stat-value" id="totalShiftsCount">-</div>
                     <div class="stat-label">次</div>
                 </div>
@@ -70,11 +69,11 @@
                 <thead>
                     <tr>
                         <th onclick="sortTable(0)" class="tooltip" data-tooltip="点击排序">姓名 ↕</th>
-                        <th onclick="sortTable(1)" class="tooltip" data-tooltip="点击排序">班次 ↕</th>
-                        <th onclick="sortTable(2)" class="tooltip" data-tooltip="点击排序">个人班次数 ↕</th>
-                        <th onclick="sortTable(3)" class="tooltip" data-tooltip="点击排序">总班次数 ↕</th>
-                        <th onclick="sortTable(4)" class="tooltip" data-tooltip="点击排序">个人班次比例 ↕</th>
-                        <th onclick="sortTable(5)" class="tooltip" data-tooltip="点击排序">历史班次比例 ↕</th>
+                        <th onclick="sortTable(1)" class="tooltip" data-tooltip="点击排序">排班 ↕</th>
+                        <th onclick="sortTable(2)" class="tooltip" data-tooltip="点击排序">个人排班数 ↕</th>
+                        <th onclick="sortTable(3)" class="tooltip" data-tooltip="点击排序">总排班数 ↕</th>
+                        <th onclick="sortTable(4)" class="tooltip" data-tooltip="点击排序">个人排班比例 ↕</th>
+                        <th onclick="sortTable(5)" class="tooltip" data-tooltip="点击排序">历史排班比例 ↕</th>
                         <th>操作</th>
                     </tr>
                 </thead>
@@ -96,8 +95,8 @@
     <script src="../js/main.js"></script>
     <script>
         /**
-         * 班次数据管理脚本
-         * 处理班次数据的显示、筛选、排序和统计功能
+         * 排班数据管理脚本
+         * 处理排班数据的显示、筛选、排序和统计功能
          */
 
         let shiftsData = [];
@@ -105,18 +104,52 @@
         const itemsPerPage = 10;
 
         /**
-         * 页面加载完成后初始化班次数据
+         * 页面加载完成后初始化排班数据
          */
         document.addEventListener('DOMContentLoaded', function() {
+            AuthManager.updateHeader();
+            initNav();
             loadShiftsData();
         });
 
         /**
-         * 从后端API加载班次数据
+         * 根据用户角色初始化导航菜单
+         */
+        function initNav() {
+            const user = StorageManager.get('user');
+            const navMenu = document.getElementById('navMenu');
+            if (!user) return;
+            
+            if (user.role === 'admin') {
+                navMenu.innerHTML = `
+                    <a href="../index.html" class="nav-item">📊 数据总览</a>
+                    <a href="shifts.html" class="nav-item active">🗂️ 排班数据</a>
+                    <a href="workhours.html" class="nav-item">⏰ 工时数据</a>
+                    <a href="leaves.html" class="nav-item">📋 请假表</a>
+                    <a href="positions.html" class="nav-item">💼 岗位工作</a>
+                `;
+            } else {
+                navMenu.innerHTML = `
+                    <a href="../index.html" class="nav-item">🗂️ 排班信息</a>
+                    <a href="../index.html?tab=leaves" class="nav-item">📋 请假申请</a>
+                `;
+            }
+        }
+
+        /**
+         * 从后端API加载排班数据
          */
         function loadShiftsData() {
+            const user = AuthManager.checkAuth();
+            if (!user) return;
+            
+            let url = '/api/shifts';
+            if (user.role === 'employee') {
+                url += `?search=${encodeURIComponent(user.name)}`;
+            }
+
             // 模拟从后端API获取数据
-            fetch('/api/shifts')
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     shiftsData = data;
@@ -124,16 +157,16 @@
                     renderTable();
                 })
                 .catch(error => {
-                    console.error('加载班次数据失败:', error);
+                    console.error('加载排班数据失败:', error);
                     // 使用示例数据
-                    loadSampleShiftsData();
+                    loadSampleShiftsData(user);
                 });
         }
 
         /**
-         * 加载示例班次数据用于演示
+         * 加载示例排班数据用于演示
          */
-        function loadSampleShiftsData() {
+        function loadSampleShiftsData(user) {
             shiftsData = [
                 { name: '钱一', shift: '早班', personalShifts: 15, totalShifts: 20, personalRatio: 75, historicalRatio: 70 },
                 { name: '孙二', shift: '中班', personalShifts: 18, totalShifts: 22, personalRatio: 81.8, historicalRatio: 75 },
@@ -151,12 +184,17 @@
                 { name: '赵四', shift: '晚班', personalShifts: 15, totalShifts: 21, personalRatio: 71.4, historicalRatio: 69 },
                 { name: '孙五', shift: '中班', personalShifts: 23, totalShifts: 29, personalRatio: 79.3, historicalRatio: 76 }
             ];
+            
+            if (user && user.role === 'employee') {
+                shiftsData = shiftsData.filter(i => i.name === user.name);
+            }
+            
             updateStats();
             renderTable();
         }
 
         /**
-         * 更新班次统计数据
+         * 更新排班统计数据
          */
         function updateStats() {
             const filteredData = getFilteredData();
@@ -334,14 +372,14 @@
         }
 
         /**
-         * 查看班次详情
+         * 查看排班详情
          * @param {number} index - 数据索引
          */
         function viewShiftDetail(index) {
             const filteredData = getFilteredData();
             const actualIndex = shiftsData.indexOf(filteredData[index]);
             const item = shiftsData[actualIndex];
-            alert(`班次详情：\n\n姓名：${item.name}\n班次：${item.shift}\n个人班次数：${item.personalShifts}\n总班次数：${item.totalShifts}\n个人班次比例：${item.personalRatio.toFixed(1)}%\n历史班次比例：${item.historicalRatio.toFixed(1)}%\n\n（实际项目中应跳转到详情页面或打开模态框）`);
+            alert(`排班详情：\n\n姓名：${item.name}\n排班：${item.shift}\n个人排班数：${item.personalShifts}\n总排班数：${item.totalShifts}\n个人排班比例：${item.personalRatio.toFixed(1)}%\n历史排班比例：${item.historicalRatio.toFixed(1)}%\n\n（实际项目中应跳转到详情页面或打开模态框）`);
         }
     </script>
 </body>

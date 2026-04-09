@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>昆明拜耳制药排班系统 - 登录</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .login-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .login-container h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        .login-btn:hover {
+            background-color: #5a6fe0;
+        }
+        .error-message {
+            color: #f5576c;
+            margin-top: 15px;
+            min-height: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="images/logo.jpg" alt="Bayer Logo" style="height: 80px; margin-bottom: 20px;">
+        <h1>昆明拜耳排班系统登录</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required placeholder="请输入用户名 (如: admin, 张三)">
+            </div>
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required placeholder="密码默认为 123456">
+            </div>
+            <button type="submit" class="login-btn">登录</button>
+            <div id="errorMessage" class="error-message"></div>
+        </form>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // 前端本地用户数据（无需后端即可登录）
+        const LOCAL_USERS = [
+            { username: 'admin', password: '123456', role: 'admin', name: '管理员' },
+            { username: '张三', password: '123456', role: 'employee', name: '张三' },
+            { username: '李四', password: '123456', role: 'employee', name: '李四' },
+            { username: '王五', password: '123456', role: 'employee', name: '王五' },
+            { username: '赵六', password: '123456', role: 'employee', name: '赵六' },
+        ];
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('username').value.trim();
+            const passwordInput = document.getElementById('password').value;
+            const errorElement = document.getElementById('errorMessage');
+
+            errorElement.textContent = '';
+
+            // 在本地用户列表中查找匹配
+            const matchedUser = LOCAL_USERS.find(
+                u => u.username === usernameInput && u.password === passwordInput
+            );
+
+            if (matchedUser) {
+                // 登录成功 - 保存用户信息到本地存储
+                StorageManager.set('user', {
+                    token: 'mock_token_' + matchedUser.username,
+                    username: matchedUser.username,
+                    name: matchedUser.name,
+                    role: matchedUser.role
+                });
+                window.location.href = 'index.html';
+            } else {
+                errorElement.textContent = '用户名或密码错误';
+            }
+        });
+
+        // 检查如果已登录则直接跳转
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = StorageManager.get('user');
+            if (user && user.token) {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>
